@@ -1,0 +1,130 @@
+	
+<div id="preview" class="pull-left">
+
+</div>
+<div class="uploader--item action pull-left" >
+	<input type="file" id="imgfile" name="picture[]" accept="image/*" multiple />
+</div>
+<script >
+//文件上传
+	var MYFILE = {
+		fileInput: null,				//html file控件
+		fileFilter: [],	//过滤后的文件数组
+		maxNums:999,		//上传图片数量
+		filter: function(files) {		//选择文件组的过滤方法
+			return files;
+		},
+		onSelect: function() {},		//文件选择后
+		onDelete: function() {},		//文件删除后
+		//获取选择文件，file控件或拖放
+		funGetFiles: function(e) {
+			// 获取文件列表对象
+			var files = e.target.files || e.dataTransfer.files;
+			//继续添加文件
+			this.fileFilter = this.fileFilter.concat(this.filter(files));
+			this.funDealFiles();
+			return this;
+		},
+		//选中文件的处理与回调
+		funDealFiles: function() {
+			for (var i = 0, file; file = this.fileFilter[i]; i++) {
+				//增加唯一索引值
+				file.index = i;
+			}
+			//执行选择回调
+			this.onSelect(this.fileFilter);
+			return this;
+		},
+		//删除对应的文件
+		funDeleteFile: function(fileDelete) {
+			var arrFile = [];
+			for (var i = 0, file; file = this.fileFilter[i]; i++) {
+				if (file != fileDelete) {
+					arrFile.push(file);
+				} else {
+					this.onDelete(fileDelete);
+				}
+			}
+			this.fileFilter = arrFile;
+			return this;
+		},
+		init: function() {
+			var self = this;
+
+			//文件选择控件选择
+			if (this.fileInput) {
+				this.fileInput.addEventListener("change", function(e) { self.funGetFiles(e); }, false);
+			}
+
+		}
+	};
+	
+	var params = {
+		fileInput: $("#imgfile").get(0),
+		maxNums:8,
+		countNums:0,
+		filter: function(files) {
+			var arrFiles = [];
+			for (var i = 0, file; file = files[i]; i++) {
+				if (file.type.indexOf("image") == 0) {
+					// if (file.size >= 512000) {
+					// 	bootbox.alert('您这张"'+ file.name +'"图片大小过大，应小于500k');
+					// } else
+					if(this.countNums > this.maxNums)	{
+						bootbox.alert('最多可以添加9张图片');
+						break;
+					} else {
+						this.countNums++;
+						arrFiles.push(file);
+					}
+				} else {
+					alert('文件"' + file.name + '"不是图片。');
+				}
+			}
+			return arrFiles;
+		},
+		onSelect: function(files) {
+			var html = '', i = 0;
+			//$("#preview").html('<div class="upload_loading"></div>');
+			var funAppendImage = function() {
+				file = files[i];
+				if (file) {
+					var reader = new FileReader()
+					reader.onload = function(e) {
+						// html = html + '<div id="uploadList_'+ i +'" class="upload_append_list"><p><strong>' + file.name + '</strong>'+
+						// 	'<a href="javascript:" class="upload_delete" title="删除" data-index="'+ i +'">删除</a><br />' +
+						// 	'<img id="uploadImage_' + i + '" src="' + e.target.result + '" class="upload_image" /></p>'+
+						// 	'<span id="uploadProgress_' + i + '" class="upload_progress"></span>' +
+						// '</div>';
+						html = html + '<div class="uploader--item" id="js-uploadImg_'+ i +'" style="background-image:url(' + e.target.result + ')"><span class="del upload-del" data-index="'+ i +'"></span></div>';
+						i++;
+						funAppendImage();
+					}
+					reader.readAsDataURL(file);
+				} else {
+					$("#preview").html(html);
+					if (html) {
+						//删除方法
+						$(".upload-del").click(function() {
+							MYFILE.funDeleteFile(files[parseInt($(this).attr("data-index"))]);
+							return false;
+						});
+						//提交按钮显示
+						$("#js-comment-btn").attr('data-uploadimg', true);
+					} else {
+						//提交按钮隐藏
+						//$("#fileSubmit").hide();
+						$("#js-comment-btn").attr('data-uploadimg', false);
+					}
+				}
+			};
+			funAppendImage();
+		},
+		onDelete: function(file) {
+			$("#js-uploadImg_" + file.index).fadeOut();
+		}
+	}
+
+	MYFILE = $.extend(MYFILE, params);
+	MYFILE.init();
+	</script>
